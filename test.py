@@ -13,7 +13,6 @@ def on_press(key):
         elif key == keyboard.Key.space:
             event = controller.step(action="ToggleObjectOn", objectId=targetObjectId, target_object= "Laptop")
             controller.step(action="Pass")
-
             for obj in event.metadata['objects']:
                 if obj['objectId'] == targetObjectId:
                     print(obj['objectId'], obj['toggleable'], obj['isToggled'])
@@ -36,7 +35,7 @@ def on_press(key):
 
 
 def get_id(object_name):
-    for obj in event.metadata['objects']:
+    for obj in event.metadata['objects']:   
         if obj['objectId'].startswith(object_name):
             print(obj['objectId'], obj['toggleable'], obj['isToggled'])
             if(obj['toggleable']!=True):
