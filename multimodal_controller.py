@@ -1,14 +1,16 @@
 from ai2thor.controller import Controller
 from dataloader import DataLoader
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
+from collections import Counter, OrderedDict
+import copy
+import cv2
+
 class MultimodalController(Controller):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
         self.dataloader=DataLoader()
 
-    def step(self, action, objectId=None,target_object=None,object_mask=None,**kwargs):
+    def step(self, action, objectId=None,target_object=None,object_mask=None,debug = True,**kwargs):
         data=None
         if action in [
             "ToggleObjectOn", "ToggleObjectOff",
@@ -21,8 +23,7 @@ class MultimodalController(Controller):
         event = super().step(**args)
         if(action == "ToggleObjectOn" and self.is_targetobject(objectId,target_object)):
             data=self.dataloader.getdata()
-            print(data["text"])
-            # self.showdata(data["observation"])     
+            print(data["text"])    
             data["observation"].show() 
         else:
             data=None
@@ -35,9 +36,78 @@ class MultimodalController(Controller):
         obj_type = objectId.split('|')[0] if objectId else ''
         return obj_type == target_object
     
-    # def showdata(self,image):
-    #     img_np = np.array(image)
-    #     img_bgr = cv2.cvtcolor(img_np, cv2.COLOR_RGB2BGR)
-    #     cv2.imshow('output', img_bgr)
-    #     cv2.waitkey(1)
- 
+    def prune_by_any_interaction(self, instances_ids):
+        pruned_instance_ids = []
+        for obj in self.last_event.metadata['objects']:
+            obj_id = obj['objectId']
+            if obj_id in instances_ids:
+                if obj['pickupable'] or obj['receptable'] or obj['openable'] or obj['toggleable'] or obj['sliceable']:
+                    pruned_instance_ids.append(obj_id)
+        
+        ordered_instance_ids = [id for id in instances_ids if id in pruned_instance_ids]
+        return ordered_instance_ids
+    
+    def va_interact(self, action, interact_mask = None,mask_px_sample = 1, debug = True):
+        # ALFRED code
+        if type(interact_mask) is str and interact_mask == "NULL":
+            raise Exception("NULL Mask")
+        elif interact_mask is not None:
+            instance_segs = np.array(self.last_event.instance_segmentation_frame)
+            color_to_object_id = self.last_event.color_to_object_id
+
+            nz_rows, nz_cols = np.nonzero(interact_mask)
+            instance_counter = Counter()
+            
+            for i in range(0, len(nz_rows), mask_px_sample):
+                x, y = nz_rows[i], nz_cols[i]
+                instance = tuple(instance_segs[x, y])
+                instance_counter[instance] += 1
+
+            if debug:
+                print("action_box","instance_counter",instance_counter)
+                
+            iou_scores = {}
+            for color_id, intersection_count in instance_counter.most_common():
+                union_count = np.sum(np.logical_or(np.all(instance_segs == color_id, axis=2), interact_mask.astype(bool)))
+                iou_scores[color_id] = intersection_count / float(union_count)
+            iou_sorted_instance_ids = list(OrderedDict(sorted(iou_scores.items(), key=lambda x: x[1], reverse=True)))
+
+            inv_obj = self.last_event.metadata['inventoryObjects'][0]['objectId'] \
+                   if len(self.last_event.metadata['inventoryObjects']) > 0 else None
+            all_ids = [color_to_object_id[color_id] for color_id in iou_sorted_instance_ids
+                       if color_id in color_to_object_id and color_to_object_id[color_id] != inv_obj]
+                
+            if debug:
+                print("action_box", "all_ids", all_ids)
+
+            instance_ids = [inst_id for inst_id in all_ids if inst_id is not None]
+            if debug:
+                print("action_box", "instance_ids", instance_ids)
+                
+
+            instance_ids = self.prune_by_any_interaction(instance_ids)
+
+            if debug:
+                    print("action_box", "instance_ids", instance_ids)
+                    instance_seg = copy.copy(instance_segs)
+                    instance_seg[:, :, :] = interact_mask[:, :, np.newaxis] ==1
+                    instance_seg *=225
+
+                    cv2.imshow('segs',instance_segs)
+                    cv2.imshow('mask', instance_seg)
+                    cv2.imshow('full', self.last_event.frame[:,:,::-1])
+                    cv2.waitKey(0)
+
+            if len(instance_ids) ==0:
+                    err ="bad interact mask. Target not found"
+                    success = False
+                    return success, None, None, err, None
+            target_instance_id = instance_ids[0]
+            
+        else:
+            target_instance_id =""
+            
+        
+        return target_instance_id
+
+  
