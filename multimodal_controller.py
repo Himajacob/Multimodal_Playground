@@ -10,7 +10,7 @@ class MultimodalController(Controller):
         super().__init__(**kwargs)
         self.dataloader=DataLoader()
 
-    def step(self, action, objectId=None,target_object=None,object_mask=None,debug = True,**kwargs):
+    def step(self, action, objectId=None,target_object=None,interact_mask=None,debug = True,**kwargs):
         data=None
         if action in [
             "ToggleObjectOn", "ToggleObjectOff",
@@ -18,6 +18,10 @@ class MultimodalController(Controller):
             "PutObject", "DropHandObject"
         ]:
             args = {"action": action, "objectId": objectId, **kwargs}
+            if debug:
+                self.get_segmentationmask()
+            if objectId is None and interact_mask is not None:
+                objectId = self.va_interact(interact_mask=interact_mask, debug=debug)
         else:
             args = {"action": action, **kwargs}
         event = super().step(**args)
@@ -47,7 +51,7 @@ class MultimodalController(Controller):
         ordered_instance_ids = [id for id in instances_ids if id in pruned_instance_ids]
         return ordered_instance_ids
     
-    def va_interact(self, action, interact_mask = None,mask_px_sample = 1, debug = True):
+    def va_interact(self, interact_mask = None,mask_px_sample = 1, debug = True):
         # ALFRED code
         if type(interact_mask) is str and interact_mask == "NULL":
             raise Exception("NULL Mask")
@@ -109,5 +113,12 @@ class MultimodalController(Controller):
             
         
         return target_instance_id
+    
+    def get_segmentationmask(self):
 
-  
+        color_to_object_id = self.last_event.color_to_object_id
+        objects_metadata = self.last_event.metadata['objects']
+
+        for color, object_id in color_to_object_id.items():
+            obj_type = next((obj['object_type'] for obj in objects_metadata if obj['objectId'] == object_id), "unknown")
+            print(f"  - ID: {object_id:<35} | Type: {obj_type:<12} | Segmentation Color: {color}")
