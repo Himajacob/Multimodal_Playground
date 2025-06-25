@@ -10,18 +10,19 @@ class MultimodalController(Controller):
         super().__init__(**kwargs)
         self.dataloader=DataLoader()
 
-    def step(self, action, objectId=None,target_object=None,interact_mask=None,debug = True,**kwargs):
+    def step(self, action, objectId=None,target_object=None,interact_mask=None,debug = False,**kwargs):
         data=None
+        if debug:
+            self.get_segmentationmask() 
+            interact_mask = self.convert_to_segmentationmask()
+        if objectId is None and interact_mask is not None:
+            objectId = self.va_interact(interact_mask=interact_mask, debug=debug)
         if action in [
             "ToggleObjectOn", "ToggleObjectOff",
             "PickupObject", "OpenObject", "CloseObject",
             "PutObject", "DropHandObject"
         ]:
             args = {"action": action, "objectId": objectId, **kwargs}
-            if debug:
-                self.get_segmentationmask()
-            if objectId is None and interact_mask is not None:
-                objectId = self.va_interact(interact_mask=interact_mask, debug=debug)
         else:
             args = {"action": action, **kwargs}
         event = super().step(**args)
@@ -45,7 +46,7 @@ class MultimodalController(Controller):
         for obj in self.last_event.metadata['objects']:
             obj_id = obj['objectId']
             if obj_id in instances_ids:
-                if obj['pickupable'] or obj['receptable'] or obj['openable'] or obj['toggleable'] or obj['sliceable']:
+                if obj['pickupable'] or obj['receptacle'] or obj['openable'] or obj['toggleable'] or obj['sliceable']:
                     pruned_instance_ids.append(obj_id)
         
         ordered_instance_ids = [id for id in instances_ids if id in pruned_instance_ids]
@@ -91,16 +92,16 @@ class MultimodalController(Controller):
 
             instance_ids = self.prune_by_any_interaction(instance_ids)
 
-            if debug:
-                    print("action_box", "instance_ids", instance_ids)
-                    instance_seg = copy.copy(instance_segs)
-                    instance_seg[:, :, :] = interact_mask[:, :, np.newaxis] ==1
-                    instance_seg *=225
+            # if debug:
+            #         print("action_box", "instance_ids", instance_ids)
+            #         instance_seg = copy.copy(instance_segs)
+            #         instance_seg[:, :, :] = interact_mask[:, :, np.newaxis] ==1
+            #         instance_seg *=225
 
-                    cv2.imshow('segs',instance_segs)
-                    cv2.imshow('mask', instance_seg)
-                    cv2.imshow('full', self.last_event.frame[:,:,::-1])
-                    cv2.waitKey(0)
+            #         cv2.imshow('segs',instance_segs)
+            #         cv2.imshow('mask', instance_seg)
+            #         cv2.imshow('full', self.last_event.frame[:,:,::-1])
+            #         cv2.waitKey(0)
 
             if len(instance_ids) ==0:
                     err ="bad interact mask. Target not found"
@@ -118,7 +119,17 @@ class MultimodalController(Controller):
 
         color_to_object_id = self.last_event.color_to_object_id
         objects_metadata = self.last_event.metadata['objects']
+        interactable_ids = self.prune_by_any_interaction(color_to_object_id.values())
 
         for color, object_id in color_to_object_id.items():
-            obj_type = next((obj['object_type'] for obj in objects_metadata if obj['objectId'] == object_id), "unknown")
-            print(f"  - ID: {object_id:<35} | Type: {obj_type:<12} | Segmentation Color: {color}")
+            if object_id in interactable_ids:
+                obj_type = next((obj['objectType'] for obj in objects_metadata if obj['objectId'] == object_id), "unknown")
+                print(f"  - ID: {object_id:<35} | Type: {obj_type:<12} | Segmentation Color: {color}")
+    
+    def convert_to_segmentationmask(self):
+        color_input = input("Enter segmentation color as R,G,B (e.g., 120,90,50): ")
+        r, g, b = map(int, color_input.strip().split(','))
+        target_color = (r, g, b)
+        seg = np.array(self.last_event.instance_segmentation_frame)
+        return np.all(seg == target_color, axis=2).astype(np.uint8)
+

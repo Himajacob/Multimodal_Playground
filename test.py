@@ -1,17 +1,18 @@
 from multimodal_controller import MultimodalController
 from pynput import keyboard
-controller = MultimodalController(scene="FloorPlan201",width=1280,height=720)
-event = controller.step(action="RotateRight")
-metadata = event.metadata
-print(event, event.metadata.keys())
-
+controller = MultimodalController(scene="FloorPlan201",
+                                  width=1280,
+                                  height=720,
+                                  renderInstanceSegmentation=True)
+event = controller.step(action="Pass")
 def on_press(key):
     try:
         if key == keyboard.Key.up:
             controller.step(action="MoveAhead")
             controller.step(action="Pass")
         elif key == keyboard.Key.space:
-            event = controller.step(action="ToggleObjectOn", objectId=targetObjectId, target_object= "Laptop")
+            # event = controller.step(action="ToggleObjectOn", objectId=targetObjectId, target_object= "Laptop",debug = True)
+            event = controller.step(action="ToggleObjectOn", objectId=None, target_object= "Laptop",debug = True)
             controller.step(action="Pass")
             for obj in event.metadata['objects']:
                 if obj['objectId'] == targetObjectId:
