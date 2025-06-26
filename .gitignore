@@ -1,0 +1,10 @@
+# Ignore Python cache
+__pycache__/
+*.pyc
+
+# Ignore a specific folder and everything inside it
+SAM/
+
+# Ignore environment folders
+.env/
+venv/
