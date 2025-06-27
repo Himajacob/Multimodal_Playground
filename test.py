@@ -12,7 +12,7 @@ def on_press(key):
             controller.step(action="Pass")
         elif key == keyboard.Key.space:
             # event = controller.step(action="ToggleObjectOn", objectId=targetObjectId, target_object= "Laptop",debug = True)
-            event = controller.step(action="ToggleObjectOn", objectId=None, target_object= "Laptop",debug = True)
+            event = controller.step(action="ToggleObjectOn", objectId=None, target_object= "Laptop",debug = True,sam=True)
             controller.step(action="Pass")
             for obj in event.metadata['objects']:
                 if obj['objectId'] == targetObjectId:

@@ -1,5 +1,6 @@
 from ai2thor.controller import Controller
 from dataloader import DataLoader
+from sammaskgenerator import SAMMaskGenerator
 import numpy as np
 from collections import Counter, OrderedDict
 import copy
@@ -9,14 +10,23 @@ class MultimodalController(Controller):
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
         self.dataloader=DataLoader()
+        self.sam_generator = SAMMaskGenerator() 
 
-    def step(self, action, objectId=None,target_object=None,interact_mask=None,debug = False,**kwargs):
+    def step(self, action, objectId=None,target_object=None,interact_mask=None,debug = False,sam_points=None,sam=False,**kwargs):
         data=None
-        if debug:
+        if debug is True and sam is False:
             self.get_segmentationmask() 
             interact_mask = self.convert_to_segmentationmask()
-        if objectId is None and interact_mask is not None:
+        
+        if sam:
+            frame = np.array(self.last_event.frame)
+            mask = self.sam_generator.getMaskFromClick(frame, point=None, debug=True)
+            objectId = self.va_interact(interact_mask=mask, debug=True)
+
+        if objectId is None and interact_mask is not None and sam is False:
             objectId = self.va_interact(interact_mask=interact_mask, debug=debug)
+        
+
         if action in [
             "ToggleObjectOn", "ToggleObjectOff",
             "PickupObject", "OpenObject", "CloseObject",
@@ -26,6 +36,7 @@ class MultimodalController(Controller):
         else:
             args = {"action": action, **kwargs}
         event = super().step(**args)
+
         if(action == "ToggleObjectOn" and self.is_targetobject(objectId,target_object)):
             data=self.dataloader.getdata()
             print(data["text"])    
