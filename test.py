@@ -1,6 +1,7 @@
 from multimodal_controller import MultimodalController
 from pynput import keyboard
-controller = MultimodalController(scene="FloorPlan201",
+controller = MultimodalController(path="asuglia/small_coco",
+                                  scene="FloorPlan201",
                                   width=1280,
                                   height=720,
                                   renderInstanceSegmentation=True)
