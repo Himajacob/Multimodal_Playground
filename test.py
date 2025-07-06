@@ -1,6 +1,6 @@
 from multimodal_controller import MultimodalController
 from pynput import keyboard
-controller = MultimodalController(path="asuglia/small_coco",
+controller = MultimodalController(path="HimaLevenSuprabha/fineweb-reduced",
                                   scene="FloorPlan201",
                                   width=1280,
                                   height=720,
