@@ -1,4 +1,4 @@
-from baserenderer import BaseRenderer
+from Render.baserenderer import BaseRenderer
 class TextRenderer(BaseRenderer):
     def __init__(self):
         super().__init__()

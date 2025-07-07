@@ -1,4 +1,4 @@
-from baserenderer import BaseRenderer
+from Render.baserenderer import BaseRenderer
 import numpy as np
 import torch
 from PIL import Image
@@ -26,7 +26,7 @@ class ImageTextRenderer(BaseRenderer):
                 self.txt_columns.append(col)
 
             else:
-                print(f"[ERROR] Column '{col}' in dataset '{name}' must be either image-like or text. Found: {type(value).__name__}")
+                print(f"Column '{col}' in dataset '{name}' must be either image-like or text. Found: {type(value).__name__}")
                 return False
 
         return True

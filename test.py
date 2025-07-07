@@ -1,6 +1,17 @@
 from multimodal_controller import MultimodalController
 from pynput import keyboard
-controller = MultimodalController(path="HimaLevenSuprabha/fineweb-reduced",
+controller = MultimodalController(dataset_config=[{"type":"image_text",
+                                            "dataset":"mscoco",
+                                            "selected_columns":["image","text"],
+                                            "path":"asuglia/small_coco",
+                                            "selected_columns":["image","sentences.raw"]},
+                                            {"type":"text",
+                                             "dataset":"fineweb",
+                                             "path":"HimaLevenSuprabha/fineweb-reduced"},
+                                            {"type":"pixel",
+                                             "dataset":"bookcorpus",
+                                             "path":"HimaLevenSuprabha/small-rendered-bookcorpus",
+                                             "selected_columns":["pixel_values"]}],
                                   scene="FloorPlan201",
                                   width=1280,
                                   height=720,

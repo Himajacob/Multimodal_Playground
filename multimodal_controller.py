@@ -7,9 +7,9 @@ import copy
 import cv2
 
 class MultimodalController(Controller):
-    def __init__(self,path,**kwargs):
+    def __init__(self,dataset_config,**kwargs):
         super().__init__(**kwargs)
-        self.dataloader=DataLoader(path)
+        self.dataloader=DataLoader(dataset_config)
         self.sam_generator = SAMMaskGenerator() 
 
     def step(self, action, objectId=None,target_object=None,interact_mask=None,debug = False,sam_points=None,sam=False,**kwargs):
@@ -40,7 +40,6 @@ class MultimodalController(Controller):
         if(action == "ToggleObjectOn" and self.is_targetobject(objectId,target_object)):
             data=self.dataloader.getdata()
             print(data["json"])  
-            data["observation"].show() 
         else:
             data=None
         
