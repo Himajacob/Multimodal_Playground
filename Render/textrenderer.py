@@ -10,7 +10,7 @@ class TextRenderer(BaseRenderer):
             if not isinstance(value,str):
                 print(f"[ERROR] Column '{col}' in dataset '{name}' is not of type str. Found type: {type(value).__name__}")
                 return False
-        self.columns.append(col)
+            self.columns.append(col)
         return True
         
     def render(self):

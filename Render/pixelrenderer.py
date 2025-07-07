@@ -1,7 +1,7 @@
 from baserenderer import BaseRenderer
 class PixelRenderer(BaseRenderer):
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         self.columns = []
     
     def verify_format(self, sample, selected_columns, name):

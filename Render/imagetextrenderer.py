@@ -19,7 +19,7 @@ class ImageTextRenderer(BaseRenderer):
         for col in selected_columns:
             value = self.get_values(sample, col)
 
-            if self.is_image_like(value):
+            if self.is_image(value):
                 self.img_columns.append(col)
 
             elif isinstance(value, str):
