@@ -10,10 +10,11 @@ from Render.pixelrenderer import PixelRenderer
 from Render.textrenderer import TextRenderer
 
 class DataLoader():
-    def __init__(self,dataset_config):
+    def __init__(self,dataset_config,render):
         self.dataset_config = dataset_config
         self.datasets = []
         self._load_dataset()
+        self.render = render
 
         
     def _load_dataset(self):
@@ -95,48 +96,13 @@ class DataLoader():
         col: renderer.get_values(sample, col)
         for col in columns}
        
-       #obs = renderer.render(sample, selected_data)
-       obs = None
+       if self.render:
+           obs = renderer.render(sample)
+       else:
+           obs = None
        return {
         "json": selected_data,
         "observation": obs
         }
     
-    def getrendering(self,**kwargs):
-
-        # code for coco dataset
-
-        # image = kwargs.get("image")
-        # caption = kwargs.get("caption", "")
-        # image = image.convert("RGB")
-        # height = image.height + 30
-        # render_image = Image.new("RGB", (image.width, height), color=(255, 255, 255))
-        # render_image.paste(image, (0, 0))
-        # draw = ImageDraw.Draw(render_image)
-        # draw.text((10, image.height + 5), caption, fill=(0, 0, 0)) 
-
-        #code for pixe dataset
-
-        # pixel_bytes = kwargs.get("pixel_values", {}).get("bytes")
-        # byte_data = bytes(pixel_bytes)
-        # render_image = Image.open(io.BytesIO(byte_data)).convert("RGB")
-        
-        text = kwargs.get("text", "")
-        lines = textwrap.wrap(text, width=100)
-        font_size = 16
-        line_height = font_size + 6
-        padding = 10
-        height = line_height * len(lines) + 2*padding
-        render_image = Image.new("RGB", (1000, height), color="white")
-        draw = ImageDraw.Draw(render_image)
-
-        h = 10
-        for line in lines:
-            draw.text((padding, h), line, fill="black")
-            h += line_height
-
-
-        # plt.imshow(render_image)
-        # plt.axis("off")
-        # plt.show()
-        return render_image
+   

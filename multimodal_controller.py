@@ -7,9 +7,9 @@ import copy
 import cv2
 
 class MultimodalController(Controller):
-    def __init__(self,dataset_config,**kwargs):
+    def __init__(self,dataset_config,render,**kwargs):
         super().__init__(**kwargs)
-        self.dataloader=DataLoader(dataset_config)
+        self.dataloader=DataLoader(dataset_config,render)
         self.sam_generator = SAMMaskGenerator() 
 
     def step(self, action, objectId=None,target_object=None,interact_mask=None,debug = False,sam_points=None,sam=False,**kwargs):

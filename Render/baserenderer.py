@@ -1,5 +1,5 @@
 class BaseRenderer:
-    def render(self):
+    def render(self,**kwargs):
         raise NotImplementedError
     
     def verify_format(self,sample,selected_columns,name):
