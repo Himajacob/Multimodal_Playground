@@ -3,8 +3,7 @@ from dataloader import DataLoader
 from sammaskgenerator import SAMMaskGenerator
 import numpy as np
 from collections import Counter, OrderedDict
-import copy
-import cv2
+
 
 class MultimodalController(Controller):
     def __init__(self,dataset_config,render,**kwargs):
@@ -18,15 +17,14 @@ class MultimodalController(Controller):
             self.get_segmentationmask() 
             interact_mask = self.convert_to_segmentationmask()
         
-        if sam:
+        elif sam:
             frame = np.array(self.last_event.frame)
             mask = self.sam_generator.getMaskFromClick(frame, point=None, debug=True)
             objectId = self.va_interact(interact_mask=mask, debug=True)
 
-        if objectId is None and interact_mask is not None and sam is False:
+        elif objectId is None and interact_mask is not None and sam is False:
             objectId = self.va_interact(interact_mask=interact_mask, debug=debug)
         
-
         if action in [
             "ToggleObjectOn", "ToggleObjectOff",
             "PickupObject", "OpenObject", "CloseObject",
@@ -36,6 +34,8 @@ class MultimodalController(Controller):
         else:
             args = {"action": action, **kwargs}
         event = super().step(**args)
+        if hasattr(event, "success") and not event.success:
+            print(event.error_message)
 
         if(action == "ToggleObjectOn" and self.is_targetobject(objectId,target_object)):
             data=self.dataloader.getdata()
@@ -142,4 +142,4 @@ class MultimodalController(Controller):
         target_color = (r, g, b)
         seg = np.array(self.last_event.instance_segmentation_frame)
         return np.all(seg == target_color, axis=2).astype(np.uint8)
-
+    

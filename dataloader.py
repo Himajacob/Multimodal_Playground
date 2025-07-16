@@ -1,6 +1,4 @@
-import os
-import io
-import textwrap
+
 import random
 from PIL import Image, ImageDraw
 from datasets import load_dataset
@@ -12,10 +10,10 @@ from Render.textrenderer import TextRenderer
 class DataLoader():
     def __init__(self,dataset_config,render):
         self.dataset_config = dataset_config
+        self.render = render
         self.datasets = []
         self._load_dataset()
-        self.render = render
-
+        
         
     def _load_dataset(self):
         total_weights = 0
@@ -78,8 +76,9 @@ class DataLoader():
             if renderer.get_values(sample, col) is None:
                 print(f"invalid column in {name}")
                 return False
-        if renderer.verify_format(sample,columns,name) is not True:
-            return False
+        if self.render:
+            if renderer.verify_format(sample, columns, name) is not True:
+                return False
         return True
         
 

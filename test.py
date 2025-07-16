@@ -4,8 +4,7 @@ controller = MultimodalController(dataset_config=[{"type":"image_text",
                                             "dataset":"mscoco",
                                             "selected_columns":["image","text"],
                                             "path":"asuglia/small_coco",
-                                            "selected_columns":["image","sentences.raw"],
-                                            "weight":1},
+                                            "selected_columns":["image","sentences.raw"]},
                                             {"type":"text",
                                              "dataset":"fineweb",
                                              "path":"HimaLevenSuprabha/fineweb-reduced",
@@ -30,9 +29,6 @@ def on_press(key):
             # event = controller.step(action="ToggleObjectOn", objectId=targetObjectId, target_object= "Laptop",debug = True)
             event = controller.step(action="ToggleObjectOn", objectId=None, target_object= "Laptop",debug = True,sam=True)
             controller.step(action="Pass")
-            for obj in event.metadata['objects']:
-                if obj['objectId'] == targetObjectId:
-                    print(obj['objectId'], obj['toggleable'], obj['isToggled'])
         elif key == keyboard.Key.down:
             controller.step(action="MoveBack")
             controller.step(action="Pass")
@@ -50,16 +46,5 @@ def on_press(key):
         print("Error:", e)
 
 
-
-def get_id(object_name):
-    for obj in event.metadata['objects']:   
-        if obj['objectId'].startswith(object_name):
-            print(obj['objectId'], obj['toggleable'], obj['isToggled'])
-            if(obj['toggleable']!=True):
-                return None
-            return obj['objectId']
-    return None
-
-targetObjectId = get_id("Laptop")
 with keyboard.Listener(on_press=on_press) as listener:
     listener.join()
