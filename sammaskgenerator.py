@@ -2,7 +2,6 @@ from segment_anything import sam_model_registry, SamPredictor
 import matplotlib.pyplot as plt
 import torch
 import numpy as np
-import cv2
 
 class SAMMaskGenerator():
     def __init__(self):
@@ -42,3 +41,21 @@ class SAMMaskGenerator():
         cid = fig.canvas.mpl_connect('button_press_event', onclick)
         plt.show()
         return coords[0] if coords else None
+      
+    # def get_point(self,image_np):
+    #     pygame.init()
+    #     surface = pygame.surfarray.make_surface(np.transpose(image_np, (1, 0, 2)))
+    #     screen = pygame.display.set_mode(surface.get_size())
+    #     screen.blit(surface, (0, 0))
+    #     pygame.display.flip()
+    #     coords = None
+    #     waiting = True
+    #     while waiting:
+    #         for event in pygame.event.get():
+    #             if event.type == pygame.MOUSEBUTTONDOWN:
+    #                 coords = event.pos
+    #                 waiting = False
+    #             elif event.type == pygame.QUIT:
+    #                 waiting = False
+    #     pygame.quit()
+    #     return coords

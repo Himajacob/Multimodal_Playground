@@ -1,6 +1,5 @@
 
 import random
-from PIL import Image, ImageDraw
 from datasets import load_dataset
 import matplotlib.pyplot as plt
 from Render.imagetextrenderer import ImageTextRenderer
@@ -23,8 +22,12 @@ class DataLoader():
             name = config["dataset"]
             dtype = config["type"]
             weights = config.get("weight",None)
+            try:
+                ds = load_dataset(path)["train"]
+            except Exception as e:
+                print(f"Failed to load dataset '{name}' from path '{path}': {e}")
+                continue
             
-            ds = load_dataset(path)["train"]
             sample = ds[0]
             columns = config.get("selected_columns", list(sample.keys()))
 
@@ -36,6 +39,7 @@ class DataLoader():
                 renderer = PixelRenderer()
             else:
                 print(f"unknown dtype {dtype}")
+                continue
 
             if self.verify_columns(sample,columns,renderer,name) is not True:
                 continue
@@ -53,7 +57,11 @@ class DataLoader():
                 total_weights += weights
             else:
                 unspecified_indices.append(len(self.datasets) -1)
-        self.check_weight(total_weights,unspecified_indices)
+        if len(self.datasets)>0:
+            self.check_weight(total_weights,unspecified_indices)
+            self.weights = [d["weight"] for d in self.datasets]
+        else:
+            print("no datasets found")
     
 
     def check_weight(self,total_weights,unspecified_indices):
@@ -82,10 +90,12 @@ class DataLoader():
         return True
         
 
-    def getdata(self):
+    def getdata(self,debug):
        # function for sampling the data
-       weights = [d["weight"] for d in self.datasets]
-       dataset_entry = random.choices(self.datasets, weights=weights, k=1)[0]
+       if len(self.datasets)<1:
+           print("no dataset available")
+           return False
+       dataset_entry = random.choices(self.datasets, weights=self.weights, k=1)[0]
        ds = dataset_entry["dataset"]
        sample = ds[random.randint(0, len(ds) - 1)]
        

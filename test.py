@@ -2,12 +2,11 @@ from multimodal_controller import MultimodalController
 from pynput import keyboard
 controller = MultimodalController(dataset_config=[{"type":"image_text",
                                             "dataset":"mscoco",
-                                            "selected_columns":["image","text"],
                                             "path":"asuglia/small_coco",
                                             "selected_columns":["image","sentences.raw"]},
                                             {"type":"text",
                                              "dataset":"fineweb",
-                                             "path":"HimaLevenSuprabha/fineweb-reduced",
+                                             "path":"HimaLevenSuprabha/fineweb-reduced",                                  
                                              "selected_columns":["text"]
                                              },
                                             {"type":"pixel",
@@ -15,19 +14,35 @@ controller = MultimodalController(dataset_config=[{"type":"image_text",
                                              "path":"HimaLevenSuprabha/small-rendered-bookcorpus",
                                              "selected_columns":["pixel_values"]}],
                                   render = True,
-                                  scene="FloorPlan201",
+                                  targetObject=["Television","Laptop","Mobile"],
+                                  scene="FloorPlan_Val3_1",
                                   width=1280,
                                   height=720,
                                   renderInstanceSegmentation=True)
 event = controller.step(action="Pass")
+
+
+def get_object_id_by_type(object_type):
+    event = controller.step(action="Pass")
+    for obj in event.metadata['objects']:
+        if object_type.lower() in obj['objectType'].lower():
+            return obj['objectId']
+    return None
+
+
+targetObjectId = get_object_id_by_type("Laptop")
+print(targetObjectId)
 def on_press(key):
     try:
         if key == keyboard.Key.up:
             controller.step(action="MoveAhead")
             controller.step(action="Pass")
         elif key == keyboard.Key.space:
-            # event = controller.step(action="ToggleObjectOn", objectId=targetObjectId, target_object= "Laptop",debug = True)
-            event = controller.step(action="ToggleObjectOn", objectId=None, target_object= "Laptop",debug = True,sam=True)
+            
+            #event = controller.step(action="ToggleObjectOn", objectId=targetObjectId, debug = False)
+            event = controller.step(action="ToggleObjectOn", objectId=None, debug = True,sam=True)
+            #event = controller.step(action="ToggleObjectOn", objectId=None,debug = True)
+            
             controller.step(action="Pass")
         elif key == keyboard.Key.down:
             controller.step(action="MoveBack")

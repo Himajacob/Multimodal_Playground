@@ -1,6 +1,7 @@
 from Render.baserenderer import BaseRenderer
 from PIL import Image,ImageDraw
 import io
+import base64
 class PixelRenderer(BaseRenderer):
     def __init__(self):
         super().__init__()
@@ -25,24 +26,23 @@ class PixelRenderer(BaseRenderer):
             self.columns.append(col)
 
         return True
-    def split_horizontal_image(self,img):
-        w, h = img.size
-        mid = w // 2
-        
-        left = img.crop((0, 0, mid, h))
-        right = img.crop((mid, 0, w, h))
-        
-        stacked = Image.new("RGB", (mid, h * 2))
-        stacked.paste(left, (0, 0))
-        stacked.paste(right, (0, h))
-        return stacked
-    def render(self,sample):
+    
+    def render(self, sample):
+        print("[DEBUG] Starting render")
         col = self.columns[0]
         value = self.get_values(sample, col)
-        pixel_bytes = value.get("bytes")
-        byte_data = bytes(pixel_bytes)
-        img = Image.open(io.BytesIO(byte_data)).convert("RGB")
-        if img.width > img.height * 1.5:  # Very horizontal? Split it
-            img = self.split_horizontal_image(img)
-        img.show()
-        return img
+        if not value or "bytes" not in value:
+            print("[ERROR] No 'bytes' key found.")
+            return
+        pixel_bytes = value["bytes"]
+        if not isinstance(pixel_bytes, (bytes, bytearray)):
+            print("[ERROR] 'bytes' field is not bytes type.")
+            return
+        print("[DEBUG] Byte length:", len(pixel_bytes))
+        try:
+            img = Image.open(io.BytesIO(pixel_bytes)).convert("L")  # grayscale
+            print("[DEBUG] Image loaded:", img.size)
+            img.show()
+            return img
+        except Exception as e:
+            print("[ERROR] Failed to open image:", e)

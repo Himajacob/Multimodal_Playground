@@ -4,25 +4,30 @@ from sammaskgenerator import SAMMaskGenerator
 import numpy as np
 from collections import Counter, OrderedDict
 
-
 class MultimodalController(Controller):
-    def __init__(self,dataset_config,render,**kwargs):
+    def __init__(self,dataset_config,render,targetObject,**kwargs):
         super().__init__(**kwargs)
         self.dataloader=DataLoader(dataset_config,render)
         self.sam_generator = SAMMaskGenerator() 
+        self.targetObject = targetObject
+        self.check_portal_object(targetObject)
 
-    def step(self, action, objectId=None,target_object=None,interact_mask=None,debug = False,sam_points=None,sam=False,**kwargs):
+    def step(self, action, objectId=None,interact_mask=None,debug = False,sam_points=None,sam=False,**kwargs):
         data=None
-        if debug is True and sam is False:
+        if objectId:
+            objectId = objectId
+        elif debug is True and sam is False:
             self.get_segmentationmask() 
             interact_mask = self.convert_to_segmentationmask()
+            
         
         elif sam:
             frame = np.array(self.last_event.frame)
             mask = self.sam_generator.getMaskFromClick(frame, point=None, debug=True)
             objectId = self.va_interact(interact_mask=mask, debug=True)
+            sam = False
 
-        elif objectId is None and interact_mask is not None and sam is False:
+        if objectId is None and interact_mask is not None and sam is False:
             objectId = self.va_interact(interact_mask=interact_mask, debug=debug)
         
         if action in [
@@ -34,22 +39,23 @@ class MultimodalController(Controller):
         else:
             args = {"action": action, **kwargs}
         event = super().step(**args)
-        if hasattr(event, "success") and not event.success:
-            print(event.error_message)
+        if not event.metadata.get("lastActionSuccess", False):
+            print(event.metadata["errorMessage"])
 
-        if(action == "ToggleObjectOn" and self.is_targetobject(objectId,target_object)):
-            data=self.dataloader.getdata()
-            print(data["json"])  
+        if action == "ToggleObjectOn" and self.is_targetobject(objectId) and event.metadata.get("lastActionSuccess", True):
+            data=self.dataloader.getdata(debug)
+            if data:
+                print(data["json"]) 
         else:
             data=None
         
         return event
     
-    def is_targetobject(self,objectId,target_object):
-        if objectId is None or target_object is None:
+    def is_targetobject(self,objectId):
+        if objectId is None or not self.targetObject:
             return False
         obj_type = objectId.split('|')[0] if objectId else ''
-        return obj_type == target_object
+        return obj_type in self.targetObject
     
     def prune_by_any_interaction(self, instances_ids):
         pruned_instance_ids = []
@@ -143,3 +149,15 @@ class MultimodalController(Controller):
         seg = np.array(self.last_event.instance_segmentation_frame)
         return np.all(seg == target_color, axis=2).astype(np.uint8)
     
+    def check_portal_object(self,objectlist):
+        if not objectlist:
+            print("No object available")
+            return
+        scene = self.last_event.metadata["objects"]
+        for obj in objectlist:
+            found = next((o for o in scene if o["objectType"] == obj), None)
+            if not found:
+                print(f"{obj}: object is not present")
+            elif not found["toggleable"]:
+                print(f"{obj}: not toggleable")
+
